@@ -1,0 +1,1 @@
+grafana-cli <account> reset-admin-password <password>
