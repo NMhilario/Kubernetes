@@ -66,6 +66,9 @@ apt-mark hold kubelet kubeadm kubectl
 # check swap config, ensure swap is 0
 free -m
 
+# install NFS common tools for NFS Persistent Volumes
+apt install nfs-common
+showmount -e <IP of NFS shares location>
 
 ### ONLY ON CONTROL NODE .. control plane install:
 kubeadm init --pod-network-cidr 10.10.0.0/16 --kubernetes-version 1.26.1 --node-name k8s-control
