@@ -90,5 +90,3 @@ Run the command from the token create output above
 # install NFS common tools for NFS Persistent Volumes
 apt install nfs-common
 showmount -e <IP of NFS shares location>
-
-#end
