@@ -67,11 +67,11 @@ apt-mark hold kubelet kubeadm kubectl
 free -m
 
 ### ONLY ON CONTROL NODE .. control plane install:
-kubeadm init --pod-network-cidr 10.10.0.0/16 --kubernetes-version 1.26.1 --node-name k8s-control
+kubeadm init --control-plane-endpoint 10.0.90.32:6443 --upload-certs --pod-network-cidr=10.10.0.0/16 --apiserver-advertise-address=10.0.90.10
 
 kubeadm init phase upload-certs --upload-certs
 kubeadm token create --certificate-key <ABOVE GENERATED KEY> --print-join-command
-kubeadm join 10.0.90.20:6443 --token s0ds2h.onaijah37p41otyx --discovery-token-ca-cert-hash sha256:975b4285d05c4d04950f902e8b212dfb358d12448bf51b815549431732a72fe0 --control-plane --certificate-key 6ff75343d611df3917ccc4dd91e2a2b089eb26d0425a1c029c5a8932941a9fc5 --apiserver-advertise-address 10.0.90.12
+kubeadm join 10.0.90.32:6443 --token s0ds2h.onaijah37p41otyx --discovery-token-ca-cert-hash sha256:975b4285d05c4d04950f902e8b212dfb358d12448bf51b815549431732a72fe0 --control-plane --certificate-key 6ff75343d611df3917ccc4dd91e2a2b089eb26d0425a1c029c5a8932941a9fc5 --apiserver-advertise-address 10.0.90.12
 
 ### TO GENERATE NEW CONTROL-PLANE JOIN COMMAND
 kubeadm token create --print-join-command --certificate-key $(sudo kubeadm init phase upload-certs --upload-certs | sed -n '3p')
