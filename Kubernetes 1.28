@@ -73,6 +73,10 @@ kubeadm init phase upload-certs --upload-certs
 kubeadm token create --certificate-key <ABOVE GENERATED KEY> --print-join-command
 kubeadm join 10.0.90.20:6443 --token s0ds2h.onaijah37p41otyx --discovery-token-ca-cert-hash sha256:975b4285d05c4d04950f902e8b212dfb358d12448bf51b815549431732a72fe0 --control-plane --certificate-key 6ff75343d611df3917ccc4dd91e2a2b089eb26d0425a1c029c5a8932941a9fc5 --apiserver-advertise-address 10.0.90.12
 
+### TO GENERATE NEW CONTROL-PLANE JOIN COMMAND
+kubeadm token create --print-join-command
+kubeadm token create --print-join-command --certificate-key $(sudo kubeadm init phase upload-certs --upload-certs | sed -n '3p')
+
 # add Calico 3.25 CNI 
 ### https://docs.tigera.io/calico/3.25/getting-started/kubernetes/quickstart
 kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/tigera-operator.yaml
