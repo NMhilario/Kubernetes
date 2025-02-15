@@ -1,0 +1,27 @@
+Upgrade K8S Cluster
+
+Changing the package repository
+
+  echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v<VERSION>/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+  curl -fsSL https://pkgs.k8s.io/core:/stable:/v<VERSION>/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+Determine which version to upgrade to
+  apt update
+  apt-cache madison kubeadm
+
+Upgrading control plane nodes
+  apt-mark unhold kubeadm
+  apt-get update && apt-get install -y kubeadm='<madison VERSION>' && apt-mark hold kubeadm
+  kubeadm upgrade plan
+  First control-plane node
+    sudo kubeadm upgrade apply v<VERSION>
+  Remaining control-plane nodes
+    sudo kubeadm upgrade node
+  Upgrade kubelet and kubectl
+    kubectl drain <node-to-drain> --ignore-daemonsets
+    apt-mark unhold kubelet kubectl
+    apt-get update && apt-get install -y kubelet='<madison VERSION>' kubectl='<madison VERSION>'
+    apt-mark hold kubelet kubectl
+    sudo systemctl daemon-reload
+    sudo systemctl restart kubelet
+    kubectl uncordon <node-to-uncordon>
