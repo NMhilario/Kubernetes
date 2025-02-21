@@ -28,7 +28,7 @@ vrrp_script check_apiserver {
 
 vrrp_instance VI_1 {
     state BACKUP
-    interface eth1
+    interface <RUN ip a command to get interface name>
     virtual_router_id 1
     priority 100
     advert_int 5
@@ -37,7 +37,7 @@ vrrp_instance VI_1 {
         auth_pass mysecret
     }
     virtual_ipaddress {
-        <SET VIRTUAL IP ADDRESS>
+        <VIRTUAL IP ADDRESS>
     }
     track_script {
         check_apiserver
@@ -61,9 +61,9 @@ backend kubernetes-backend
   mode tcp
   option ssl-hello-chk
   balance roundrobin
-    server kmaster1 <MASTER 1 IP ADDRESS>:6443 check fall 3 rise 2
-    server kmaster2 <MASTER 2 IP ADDRESS>:6443 check fall 3 rise 2
-    server kmaster3 <MASTER 2 IP ADDRESS>:6443 check fall 3 rise 2
+    server master1 <MASTER 1 IP ADDRESS>:6443 check fall 3 rise 2
+    server master2 <MASTER 2 IP ADDRESS>:6443 check fall 3 rise 2
+    server master3 <MASTER 2 IP ADDRESS>:6443 check fall 3 rise 2
 
 EOF
 
