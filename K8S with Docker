@@ -1,1 +1,244 @@
+[DISABLE SWAP (MASTER/WORKER NODES)]
 
+sudo swapoff -a
+sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+sudo sysctl -p
+
+[SET STATIC IP ADDRESS]
+
+(OPTION 1)
+sudo nano /etc/netplan/01-netcfg.yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      addresses:
+        - <IP-ADDRESS>/24
+      gateway4: <GATEWAY IP-ADDRESS>
+      nameservers:
+        addresses: [8.8.8.8]
+
+(OPTION 2)
+ADD STATIC MAPPING IN ROUTER
+
+[SET HOSTNAMES]
+
+sudo nano /etc/hostname
+
+[ADD IP-ADDRESS/HOSTNAME TO HOSTS FILE]
+
+sudo nano /etc/hosts
+	<IP-ADDRESS>	<HOSTNAME>
+	(ALL MACHINES IN CLUSTER)
+
+[LOAD br_netfilter MODULE (MASTER/WORKER NODES)]
+
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+br_netfilter
+EOF
+
+[UPDATE SYSCTL SETTINGS FOR KUBERNETES NETWORKING (MASTER/WORKER NODES)]
+
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+sudo sysctl --system
+
+sudo su
+	echo "net.bridge.bridge-nf-call-iptables = 1" >> /etc/sysctl.conf
+	modprobe br_netfilter
+	sysctl -p /etc/sysctl.conf
+	sysctl net.bridge.bridge-nf-call-iptables
+
+[LOAD BALANCER MACHINES]
+
+sudo apt update && sudo apt install -y keepalived haproxy
+
+sudo cat >> /etc/keepalived/check_apiserver.sh <<EOF
+#!/bin/sh
+
+errorExit() {
+  echo "*** $@" 1>&2
+  exit 1
+}
+
+curl --silent --max-time 2 --insecure https://localhost:6443/ -o /dev/null || errorExit "Error GET https://localhost:6443/"
+if ip addr | grep -q <VIRTUAL IP ADDRESS>; then
+  curl --silent --max-time 2 --insecure https://<VIRTUAL IP ADDRESS>:6443/ -o /dev/null || errorExit "Error GET https://<VIRTUAL IP ADDRESS>:6443/"
+fi
+EOF
+
+sudo chmod +x /etc/keepalived/check_apiserver.sh
+
+sudo cat >> /etc/keepalived/keepalived.conf <<EOF
+vrrp_script check_apiserver {
+  script "/etc/keepalived/check_apiserver.sh"
+  interval 3
+  timeout 10
+  fall 5
+  rise 2
+  weight -2
+}
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface eth1
+    virtual_router_id 1
+    priority 100
+    advert_int 5
+    authentication {
+        auth_type PASS
+        auth_pass mysecret
+    }
+    virtual_ipaddress {
+        <SET VIRTUAL IP ADDRESS>
+    }
+    track_script {
+        check_apiserver
+    }
+}
+EOF
+
+sudo systemctl enable --now keepalived
+
+sudo cat >> /etc/haproxy/haproxy.cfg <<EOF
+
+frontend kubernetes-frontend
+  bind *:6443
+  mode tcp
+  option tcplog
+  default_backend kubernetes-backend
+
+backend kubernetes-backend
+  option httpchk GET /healthz
+  http-check expect status 200
+  mode tcp
+  option ssl-hello-chk
+  balance roundrobin
+    server kmaster1 <MASTER 1 IP ADDRESS>:6443 check fall 3 rise 2
+    server kmaster2 <MASTER 2 IP ADDRESS>:6443 check fall 3 rise 2
+    server kmaster3 <MASTER 2 IP ADDRESS>:6443 check fall 3 rise 2
+
+EOF
+
+sudo systemctl enable haproxy && sudo systemctl restart haproxy
+
+[INSTALL DOCKER ENGINE (MASTER/WORKER NODES)]
+
+sudo apt update
+
+sudo apt-get install \
+apt-transport-https \
+ca-certificates \
+curl \
+gnupg \
+lsb-release
+
+sudo cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+
+apt-cache madison docker-ce
+apt-cache madison docker-ce-cli
+apt-cache madison containerd.io
+
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+
+LATEST:
+	sudo apt-get install docker-ce docker-ce-cli containerd.io
+VERSION:
+	sudo apt-get install docker-ce=<VERSION> docker-ce-cli=<VERSION> containerd.io=<VERSION>
+
+sudo apt-mark hold docker-ce docker-ce-cli containerd.io
+
+sudo systemctl enable docker
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+[KUBERNETES SETUP (MASTER/WORKER NODES)]
+
+sudo apt update
+
+sudo apt-get install -y apt-transport-https ca-certificates curl
+
+curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt update
+
+sudo apt-get install -y kubelet kubeadm kubectl
+	curl -s https://packages.cloud.google.com/apt/dists/kubernetes-xenial/main/binary-amd64/Packages | grep Version | awk '{print $2}'	
+	sudo apt-get install -qy kubelet=<version> kubectl=<version> kubeadm=<version> -
+sudo apt-mark hold kubelet kubeadm kubectl
+	sudo apt-mark unhold $(apt-mark showhold)
+
+[ONLY ON MASTER NODE]
+
+sudo kubeadm init --control-plane-endpoint <HAPROXY VIRTUAL IP>:6443 --upload-certs --pod-network-cidr=<IP-ADDRESS RANGE>/16 --apiserver-advertise-address=<MASTER IP>
+
+mkdir -p $HOME/.kube && sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && sudo chown $(id -u):$(id -g) $HOME/.kube/config
+export KUBECONFIG=/etc/kubernetes/admin.conf
+
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+[TYPE ON MASTER NODE TO CREATE/GET HASH/TOKEN LIST (OPTIONAL)]
+sudo kubeadm token create
+
+sudo kubeadm token list
+
+openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt \
+openssl rsa -pubin -outform der 2>> /dev/null \
+openssl dgst -sha256 -hex | sed 's/^.* //'
+
+[ON ALL WORKER NODES]
+
+sudo kubeadm join kube-master:6443 \
+--token <TOKEN> \
+--discovery-token-ca-cert-hash <HASH>
+
+[ONLY TO PATCH POD_CIDR IF NEEDED]
+sudo cat /etc/kubernetes/manifests/kube-controller-manager.yaml | grep -i cluster-cidr
+sudo kubectl patch node slave-node-1 -p '{"spec":{"podCIDR":\<IP-ADDRESS RANGE>}}'
+
+[OPTIONAL]
+
+kubectl label nodes <SLAVE-NODE> kubernetes.io/role=<NODE LABEL>
+
+kubectl describe nodes kube-master | grep Taints:
+(TAINT) kubectl taint nodes <NODE/--all> node-role.kubernetes.io/<NODE ROLE LABEL>
+(UNTAINT) kubectl taint nodes --all node-role.kubernetes.io/<NODE ROLE LABEL>-
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/baremetal/deploy.yaml
+
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.3/manifests/namespace.yaml
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.3/manifests/metallb.yaml
+
+sudo kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.3.1/aio/deploy/recommended.yaml
+
+[RESETING]
+
+sudo kubeadm reset
+
+sudo systemctl stop kubelet && systemctl stop docker
+
+sudo rm -fr /etc/kubernetes/ && sudo rm -rf /etc/cni/ && sudo rm -fr ~/.kube/
+
+sudo iptables -F
