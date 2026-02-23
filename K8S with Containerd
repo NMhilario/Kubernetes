@@ -70,7 +70,7 @@ free -m
 
 ### ONLY ON CONTROL NODE .. control plane install:
   ## NEW CLUSTER
-    kubeadm init --control-plane-endpoint <Endpoint IP>:6443 --upload-certs --pod-network-cidr=10.10.0.0/16 --apiserver-advertise-address=<Node IP>
+    kubeadm init --control-plane-endpoint <Endpoint IP>:6443 --upload-certs --pod-network-cidr=10.10.0.0/16
   ## EXISTING CLUSTER
     kubeadm init phase upload-certs --upload-certs
     kubeadm token create --certificate-key <result from above output command> --print-join-command
