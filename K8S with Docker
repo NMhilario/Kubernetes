@@ -192,7 +192,7 @@ sudo apt-mark hold kubelet kubeadm kubectl
 
 [ONLY ON MASTER NODE]
 
-sudo kubeadm init --control-plane-endpoint <HAPROXY VIRTUAL IP>:6443 --upload-certs --pod-network-cidr=<IP-ADDRESS RANGE>/16 --apiserver-advertise-address=<MASTER IP>
+sudo kubeadm init --control-plane-endpoint <HAPROXY VIRTUAL IP>:6443 --upload-certs --pod-network-cidr=<IP-ADDRESS RANGE>/16
 
 mkdir -p $HOME/.kube && sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && sudo chown $(id -u):$(id -g) $HOME/.kube/config
 export KUBECONFIG=/etc/kubernetes/admin.conf
