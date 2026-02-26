@@ -77,6 +77,7 @@ free -m
 
 # add Calico 3.25 CNI 
 ### https://docs.tigera.io/calico/3.25/getting-started/kubernetes/quickstart
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/operator-crds.yaml
 kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/tigera-operator.yaml
 wget https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/custom-resources.yaml
 vi custom-resources.yaml <<<<<< edit the CIDR for pods <CIDR IP DEFINED IN KUBEADM INIT COMMAND>
