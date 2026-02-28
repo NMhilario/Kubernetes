@@ -8,9 +8,9 @@ FROM
 https://youtu.be/7k9Rdlx30OY
 https://www.itsgeekhead.com/tuts/kubernetes-126-ubuntu-2204.txt
 
-KUBERNETES 1.28
-CONTAINERD 1.7.21
-UBUNTU 22.04
+KUBERNETES 1.34
+CONTAINERD 2.2.1
+UBUNTU 24.04
 
 -------------------------------------------------------------------------------
 
