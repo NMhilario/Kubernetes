@@ -75,11 +75,10 @@ free -m
     kubeadm init phase upload-certs --upload-certs
     kubeadm token create --certificate-key <result from above output command> --print-join-command
 
-# add Calico 3.25 CNI 
-### https://docs.tigera.io/calico/3.25/getting-started/kubernetes/quickstart
-kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/operator-crds.yaml
-kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/tigera-operator.yaml
-curl -O https://raw.githubusercontent.com/projectcalico/calico/v3.28.1/manifests/custom-resources.yaml
+# add Calico 3.31.4 CNI 
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.4/manifests/operator-crds.yaml
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.31.4/manifests/tigera-operator.yaml
+curl -O https://raw.githubusercontent.com/projectcalico/calico/v3.31.4/manifests/custom-resources.yaml
 vi custom-resources.yaml <<<<<< edit the CIDR for pods <CIDR IP DEFINED IN KUBEADM INIT COMMAND>
 kubectl apply -f custom-resources.yaml
 
