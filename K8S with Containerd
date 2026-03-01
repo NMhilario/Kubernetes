@@ -9,7 +9,7 @@ https://youtu.be/7k9Rdlx30OY
 https://www.itsgeekhead.com/tuts/kubernetes-126-ubuntu-2204.txt
 
 UBUNTU 24.04
-KUBERNETES 1.34
+KUBERNETES 1.31
 CONTAINERD 2.2.1
 RUNC 1.4.0
 CNI-PLUGINS 1.9.0
@@ -54,8 +54,8 @@ swapoff -a  <<<<<<<< just disable it in /etc/fstab instead
 apt-get update
 apt-get install -y apt-transport-https ca-certificates curl
 
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.34/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
 apt-get update
 
