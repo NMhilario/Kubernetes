@@ -10,7 +10,7 @@ https://www.itsgeekhead.com/tuts/kubernetes-126-ubuntu-2204.txt
 
 UBUNTU 24.04
 KUBERNETES 1.31
-CONTAINERD 2.2.1
+CONTAINERD 1.7.25
 RUNC 1.4.0
 CNI-PLUGINS 1.9.0
 CALICO 3.31.4 CNI
@@ -32,8 +32,8 @@ printf "net.bridge.bridge-nf-call-iptables = 1\nnet.ipv4.ip_forward = 1\nnet.bri
 
 sysctl --system
 
-wget https://github.com/containerd/containerd/releases/download/v2.2.1/containerd-2.2.1-linux-amd64.tar.gz -P /tmp/
-tar Cxzvf /usr/local /tmp/containerd-2.2.1-linux-amd64.tar.gz
+wget https://github.com/containerd/containerd/releases/download/v1.7.25/containerd-1.7.25-linux-amd64.tar.gz -P /tmp/
+tar Cxzvf /usr/local /tmp/containerd-1.7.25-linux-amd64.tar.gz
 wget https://raw.githubusercontent.com/containerd/containerd/main/containerd.service -P /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now containerd
@@ -74,6 +74,7 @@ free -m
 ### ONLY ON CONTROL NODE .. control plane install:
   ## NEW CLUSTER
     kubeadm init --control-plane-endpoint <Endpoint IP>:6443 --upload-certs --pod-network-cidr=10.10.0.0/16
+    sudo kubeadm init --control-plane-endpoint 10.0.90.80:6443 --upload-certs --pod-network-cidr=192.168.0.0/16 --cri-socket=unix:///run/containerd/containerd.sock
   ## EXISTING CLUSTER
     kubeadm init phase upload-certs --upload-certs
     kubeadm token create --certificate-key <result from above output command> --print-join-command
