@@ -9,7 +9,7 @@ https://youtu.be/7k9Rdlx30OY
 https://www.itsgeekhead.com/tuts/kubernetes-126-ubuntu-2204.txt
 
 UBUNTU 24.04
-KUBERNETES 1.31
+KUBERNETES 1.31.14
 CONTAINERD 1.7.25
 RUNC 1.4.0
 CNI-PLUGINS 1.9.0
@@ -73,8 +73,7 @@ free -m
 
 ### ONLY ON CONTROL NODE .. control plane install:
   ## NEW CLUSTER
-    kubeadm init --control-plane-endpoint <Endpoint IP>:6443 --upload-certs --pod-network-cidr=10.10.0.0/16
-    sudo kubeadm init --control-plane-endpoint 10.0.90.80:6443 --upload-certs --pod-network-cidr=192.168.0.0/16 --cri-socket=unix:///run/containerd/containerd.sock
+    sudo kubeadm init --kubernetes-version=v<VERSION> --control-plane-endpoint <Endpoint IP>:6443 --upload-certs --pod-network-cidr=192.168.0.0/16 --cri-socket=unix:///run/containerd/containerd.sock
   ## EXISTING CLUSTER
     kubeadm init phase upload-certs --upload-certs
     kubeadm token create --certificate-key <result from above output command> --print-join-command
